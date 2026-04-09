@@ -6,18 +6,19 @@ This project is a cloud-native microservices application built with Node.js and 
 
 In this version, all services are exposed externally via Azure Container Apps.
 
+```bash
 Client
-
-- |
-- |----> API Gateway (Public)
-- | |
-- | |----> User Service (Public)
-- | |
-- | |----> Order Service (Public)
-- |
-- |----> User Service (Direct Access - Optional)
-- |
-- |----> Order Service (Direct Access - Optional)
+|
+|----> API Gateway (Public)
+| |
+| |----> User Service (Public)
+| |
+| |----> Order Service (Public)
+|
+|----> User Service (Direct Access - Optional)
+|
+|----> Order Service (Direct Access - Optional)
+```
 
 - User Service → Azure PostgreSQL
 - Order Service → MongoDB Atlas
@@ -67,58 +68,56 @@ Other services should remain internal
 
 📂 Project Structure
 
-- .
-- ├── api-gateway/
-- ├── user-service/
-- ├── order-service/
-- ├── postgres-init/
-- ├── mongo-init/
-- ├── docker-compose.yml (optional)
-- └── README.md
+```bash
+.
+├── api-gateway/
+├── user-service/
+├── order-service/
+├── postgres-init/
+├── mongo-init/
+├── docker-compose.yml (optional)
+└── README.md
+```
 
 ## ⚙️ Environment Variables
 
 ### API Gateway
 
+```bash
 - PORT=3000
-
-#### for cloud azure
-
-- USER_SERVICE_URL=http://user-service
-- ORDER_SERVICE_URL=http://order-service
-
-#### on local with docker compose
-
-- USER_SERVICE_URL=http://user-service:3001
-- ORDER_SERVICE_URL=http://order-service:3002
+#for cloud azure
+USER_SERVICE_URL=http://user-service
+ORDER_SERVICE_URL=http://order-service
+#on local with docker compose
+USER_SERVICE_URL=http://user-service:3001
+ORDER_SERVICE_URL=http://order-service:3002
+```
 
 ### User Service
 
-- PORT=3001
-
-#### for cloud azure
-
-- DATABASE_URL=postgres://<username>:<password>@<server>.postgres.database.azure.com:5432/userdb?sslmode=require
-
-#### on local with docker compose
-
-- DATABASE_URL=postgres://admin123:Admin123@postgres:5432/userdb
+```bash
+PORT=3001
+#for cloud azure
+DATABASE_URL=postgres://<username>:<password>@<server>.postgres.database.azure.com:5432/userdb?sslmode=require
+#on local with docker compose
+DATABASE_URL=postgres://admin123:Admin123@postgres:5432/userdb
+```
 
 ### Order Service
 
-- PORT=3002
-
-#### for cloud azure
-
-- MONGO_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/?retryWrites=true&w=majority&appName=ordersdb
-
-#### on local with docker compose
-
-- MONGO_URI=mongodb://admin123:Admin123@mongo:27017/ordersdb
+```bash
+PORT=3002
+#for cloud azure
+MONGO_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/?retryWrites=true&w=majority&appName=ordersdb
+#on local with docker compose
+MONGO_URI=mongodb://admin123:Admin123@mongo:27017/ordersdb
+```
 
 ## 🐳 Run Locally (Docker)
 
-- docker-compose up --build
+```bash
+docker-compose up --build
+```
 
 ### 🧪 3. Test the Application
 
@@ -138,7 +137,8 @@ Other services should remain internal
 
 ### 1. Deploy User Service (External)
 
-az containerapp create \
+```bashaz
+containerapp create \
  --name user-service \
  --resource-group microservices-rg \
  --environment my-env \
@@ -146,9 +146,11 @@ az containerapp create \
  --target-port 3001 \
  --ingress external \
  --env-vars DATABASE_URL="<your_postgres_url>"
+```
 
 ### 2. Deploy Order Service (External)
 
+```bash
 az containerapp create \
  --name order-service \
  --resource-group microservices-rg \
@@ -157,9 +159,11 @@ az containerapp create \
  --target-port 3002 \
  --ingress external \
  --env-vars MONGO_URI="<your_mongo_uri>"
+```
 
 ### 3. Deploy API Gateway (External)
 
+```bash
 az containerapp create \
  --name api-gateway \
  --resource-group microservices-rg \
@@ -170,6 +174,7 @@ az containerapp create \
  --env-vars \
  USER_SERVICE_URL=https://user-service \
  ORDER_SERVICE_URL=https://order-service
+```
 
 ## 🌍 Endpoints
 
