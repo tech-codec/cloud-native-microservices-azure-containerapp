@@ -1,4 +1,4 @@
-# 🚀 Cloud-Native Microservices Application (Node.js + Azure)
+## 🚀 Cloud-Native Microservices Application (Node.js + Azure)
 
 This project is a cloud-native microservices application built with Node.js and deployed on Azure. It demonstrates how to design, containerize, and deploy distributed systems using modern DevOps and cloud practices.
 
@@ -54,9 +54,9 @@ Other services should remain internal
 
 👉 Current setup (for learning/testing):
 
-## All services are external for easier debugging and direct testing
+- All services are external for easier debugging and direct testing
 
-🛠️ Tech Stack
+## 🛠️ Tech Stack
 
 - Node.js (Express)
 - Docker
@@ -66,7 +66,7 @@ Other services should remain internal
 - MongoDB Atlas
 - Axios (service communication)
 
-📂 Project Structure
+## 📂 Project Structure
 
 ```bash
 .
