@@ -131,7 +131,9 @@ docker-compose up --build
 
 ### Stop the Application
 
-- docker-compose down
+```bash
+docker-compose down
+```
 
 ## ☁️ Deploy to Azure (Updated)
 
