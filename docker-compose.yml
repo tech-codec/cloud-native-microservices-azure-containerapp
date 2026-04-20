@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   # 🐘 PostgreSQL
   postgres:
@@ -5,19 +7,21 @@ services:
     container_name: postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: admin123
-      POSTGRES_PASSWORD: Admin123
-      POSTGRES_DB: userdb
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./postgres-init:/docker-entrypoint-initdb.d:ro
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin123"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - backend
 
   # 🍃 MongoDB
   mongo:
@@ -25,18 +29,20 @@ services:
     container_name: mongo
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: mongouser
-      MONGO_INITDB_ROOT_PASSWORD: mongopassword
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     volumes:
       - mongodata:/data/db
-      - ./mongo-init:/docker-entrypoint-initdb.d
+      - ./mongo-init:/docker-entrypoint-initdb.d:ro
     ports:
-      - "27018:27017"
+      - "${MONGO_PORT}:27017"
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - backend
 
   # 👤 User Service
   user-service:
@@ -44,13 +50,19 @@ services:
     container_name: user-service
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://admin123:Admin123@postgres:5432/userdb
-      PORT: 3001
+      DATABASE_URL: ${DATABASE_URL}
+      PORT: ${USER_SERVICE_PORT}
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
     ports:
-      - "3001:3001"
+      - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
+    networks:
+      - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # 📦 Order Service
   order-service:
@@ -58,13 +70,19 @@ services:
     container_name: order-service
     restart: unless-stopped
     environment:
-      MONGO_URI: mongodb://admin123:Admin123@mongo:27017/ordersdb
-      PORT: 3002
+      MONGO_URI: ${MONGO_URI}
+      PORT: ${ORDER_SERVICE_PORT}
     depends_on:
-      mongo:
-        condition: service_healthy
+      - mongo
     ports:
-      - "3002:3002"
+      - "${ORDER_SERVICE_PORT}:${ORDER_SERVICE_PORT}"
+    networks:
+      - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # 🌐 API Gateway
   api-gateway:
@@ -72,16 +90,61 @@ services:
     container_name: api-gateway
     restart: unless-stopped
     environment:
-      USER_SERVICE_URL: http://user-service:3001
-      ORDER_SERVICE_URL: http://order-service:3002
-      PORT: 3000
+      USER_SERVICE_URL: ${USER_SERVICE_URL}
+      ORDER_SERVICE_URL: ${ORDER_SERVICE_URL}
+      PORT: ${API_GATEWAY_PORT}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN}
     depends_on:
       - user-service
       - order-service
     ports:
-      - "3000:3000"
+      - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- --timeout=2000 http://localhost:${API_GATEWAY_PORT}/health || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - backend
+      - frontend_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-# 💾 Persistent storage
+  # 🖥 Frontend
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+    container_name: frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: ${VITE_API_URL}
+    depends_on:
+      - api-gateway
+    ports:
+      - "${FRONTEND_PORT}:80"
+    networks:
+      - frontend_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   pgdata:
   mongodata:
+
+networks:
+  backend:
+    driver: bridge
+  frontend_net:
+    driver: bridge

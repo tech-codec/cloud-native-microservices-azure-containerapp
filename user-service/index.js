@@ -1,8 +1,8 @@
 const express = require("express");
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 
-require("dotenv").config();
+//require("dotenv").config(); // for local development, not needed in Docker as env vars are set in compose
 const { Pool } = require("pg");
 
 app.use(express.json());

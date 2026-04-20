@@ -1,9 +1,9 @@
 // ...existing code...
 const express = require("express");
 const app = express();
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT;
 
-require("dotenv").config();
+//require("dotenv").config(); // for local development, not needed in Docker as env vars are set in compose
 const mongoose = require("mongoose");
 
 app.use(express.json());
