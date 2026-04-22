@@ -207,6 +207,19 @@ In Azure Portal → Container App → Secrets:
 
 ---
 
+## 🖥 Deploy Frontend
+
+    az containerapp create \
+     --name frontend \
+     --resource-group microservices-rg \
+     --environment microservices-env \
+     --image microservicesacr.azurecr.io/frontend:v1 \
+     --target-port 80 \
+     --ingress external \
+     --env-vars USER_SERVICE_URLVITE_API_URL=api-gateway-endpoint
+
+---
+
 ## 🧪 Troubleshooting
 
 ### CORS Error
