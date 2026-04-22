@@ -1,248 +1,265 @@
-## 🚀 Cloud-Native Microservices Application (Node.js + Azure)
+# 🚀 Cloud-Native Microservices Application (Node.js + Azure)
 
-This project is a cloud-native microservices application built with Node.js and deployed on Azure. It demonstrates how to design, containerize, and deploy distributed systems using modern DevOps and cloud practices.
-
-## 📌 Architecture Overview (Updated)
-
-In this version, all services are exposed externally via Azure Container Apps.
-
-```bash
-Client
-|
-|----> API Gateway (Public)
-| |
-| |----> User Service (Public)
-| |
-| |----> Order Service (Public)
-|
-|----> User Service (Direct Access - Optional)
-|
-|----> Order Service (Direct Access - Optional)
-```
-
-- User Service → Azure PostgreSQL
-- Order Service → MongoDB Atlas
-
-## Services
-
-### API Gateway
-
-- Main entry point for clients
-- Aggregates data from user-service and order-service
-- Publicly accessible
-
-### User Service
-
-- Manages user data
-- Connected to Azure PostgreSQL
-- Publicly accessible (for testing/debugging)
-
-### Order Service
-
-- Manages order data
-- Connected to MongoDB Atlas
-- Publicly accessible (for testing/debugging)
-
-⚠️ Important Architecture Note
-
-Although all services are exposed externally:
-
-👉 Best practice (production):
-
-Only API Gateway should be public
-Other services should remain internal
-
-👉 Current setup (for learning/testing):
-
-- All services are external for easier debugging and direct testing
-
-## 🛠️ Tech Stack
+This project demonstrates a production-ready cloud-native microservices
+architecture using:
 
 - Node.js (Express)
-- Docker
+- Docker & Docker Compose
 - Azure Container Apps
-- Azure Container Registry (ACR)
 - Azure PostgreSQL
 - MongoDB Atlas
-- Axios (service communication)
+
+It showcases real-world cloud deployment, including networking, secrets
+management, and service communication.
+
+---
+
+## 📌 Architecture Overview
+
+![Architecture Diagram](./screenshorts/architecture%20overview.png)
+
+![Architecture Diagram](./screenshorts/cloud-native-app.drawio.png)
+
+---
+
+## 🧱 Tech Stack
+
+- Backend: Node.js (Express)
+- Frontend: React (Vite + Nginx)
+- Containerization: Docker
+- Cloud: Azure Container Apps
+- Registry: Azure Container Registry (ACR)
+- Databases:
+  - Azure PostgreSQL
+  - MongoDB Atlas
+
+---
 
 ## 📂 Project Structure
 
-```bash
-.
-├── api-gateway/
-├── user-service/
-├── order-service/
-├── postgres-init/
-├── mongo-init/
-├── docker-compose.yml (optional)
-└── README.md
-```
+    .
+    ├── api-gateway/
+    ├── user-service/
+    ├── order-service/
+    ├── frontend/
+    ├── postgres-init/
+    ├── mongo-init/
+    ├── docker-compose.yml
+    ├── .env
+    └── README.md
+
+---
 
 ## ⚙️ Environment Variables
 
-### API Gateway
+### 🔑 Global `.env`
 
-```bash
-- PORT=3000
-#for cloud azure
-USER_SERVICE_URL=http://user-service
-ORDER_SERVICE_URL=http://order-service
-#on local with docker compose
-USER_SERVICE_URL=http://user-service:3001
-ORDER_SERVICE_URL=http://order-service:3002
-```
+    #PostgreSQL
+    POSTGRES_USER=admin123
+    POSTGRES_PASSWORD=Admin123
+    POSTGRES_DB=userdb
+    POSTGRES_PORT=5433
 
-### User Service
+    #MongoDB
+    MONGO_USER=mongouser
+    MONGO_PASSWORD=mongopassword
+    MONGO_PORT=27018
 
-```bash
-PORT=3001
-#for cloud azure
-DATABASE_URL=postgres://<username>:<password>@<server>.postgres.database.azure.com:5432/userdb?sslmode=require
-#on local with docker compose
-DATABASE_URL=postgres://admin123:Admin123@postgres:5432/userdb
-```
+    #User Service
+    USER_SERVICE_PORT=3001
+    DATABASE_URL=postgres://admin123:Admin123@postgres:5432/userdb
 
-### Order Service
+    #Order Service
+    ORDER_SERVICE_PORT=3002
+    MONGO_URI=mongodb://admin123:Admin123@mongo:27017/ordersdb
 
-```bash
-PORT=3002
-#for cloud azure
-MONGO_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/?retryWrites=true&w=majority&appName=ordersdb
-#on local with docker compose
-MONGO_URI=mongodb://admin123:Admin123@mongo:27017/ordersdb
-```
+    #API Gateway
+    API_GATEWAY_PORT=3000
+    USER_SERVICE_URL=http://user-service:3001
+    ORDER_SERVICE_URL=http://order-service:3002
+    FRONTEND_ORIGIN=http://localhost:5173
 
-## 🐳 Run Locally (Docker)
+    #Frontend
+    FRONTEND_PORT=5173
+    VITE_API_URL=http://localhost:3000
 
-```bash
-docker-compose up --build
-```
+---
 
-### 🧪 3. Test the Application
+## 🐳 Run Locally
 
-- API Gateway (Main Entry): curl http://localhost:3000/users-with-orders
-- User Service: curl http://localhost:3001/users
-- Order Service: curl http://localhost:3002/orders
+    docker compose up --build
 
-### MongoDB and PostgreSQL Data
+### Access
 
-- The order-service and user-service will automatically seed data if the collection and table is empty.
+- Frontend → http://localhost:5173\
+- API Gateway → http://localhost:3000\
+- User Service → http://localhost:3001\
+- Order Service → http://localhost:3002
 
-### Stop the Application
+### Test
 
-```bash
-docker-compose down
-```
+    curl http://localhost:3000/users-with-orders
 
-## ☁️ Deploy to Azure (Updated)
+### Stop
 
-### 1. Deploy User Service (External)
+    docker compose down
 
-```bashaz
-containerapp create \
- --name user-service \
- --resource-group microservices-rg \
- --environment my-env \
- --image <registry>.azurecr.io/user-service:v1 \
- --target-port 3001 \
- --ingress external \
- --env-vars DATABASE_URL="<your_postgres_url>"
-```
+---
 
-### 2. Deploy Order Service (External)
+## ☁️ Azure Deployment
 
-```bash
-az containerapp create \
- --name order-service \
- --resource-group microservices-rg \
- --environment my-env \
- --image <registry>.azurecr.io/order-service:v1 \
- --target-port 3002 \
- --ingress external \
- --env-vars MONGO_URI="<your_mongo_uri>"
-```
+### Step 1: Resource Group
 
-### 3. Deploy API Gateway (External)
+    az group create --name microservices-rg --location canadacentral
 
-```bash
-az containerapp create \
- --name api-gateway \
- --resource-group microservices-rg \
- --environment my-env \
- --image <registry>.azurecr.io/api-gateway:v1 \
- --target-port 3000 \
- --ingress external \
- --env-vars \
- USER_SERVICE_URL=https://user-service \
- ORDER_SERVICE_URL=https://order-service
-```
+### Step 2: ACR
 
-## 🌍 Endpoints
+    az acr create --name microservicesacr --resource-group microservices-rg --sku Basic
+    az acr login --name microservicesacr
 
-### API Gateway
+### Step 3: Build & Push
 
-- GET /users-with-orders
+    docker build -t microservicesacr.azurecr.io/api-gateway:v1 ./api-gateway
+    docker push microservicesacr.azurecr.io/api-gateway:v1
 
-### User Service (Direct)
+(repeat for all services)
 
-- GET /users
-- POST /users
+---
 
-### Order Service (Direct)
+### Step 4: Container Apps Environment
 
-- GET /orders
-- GET /orders?userId=1
-- POST /orders
+    az containerapp env create \
+      --name microservices-env \
+      --resource-group microservices-rg \
+      --location canadacentral
 
-## 🧪 Testing
+---
 
-### API Gateway
+## 🟢 MongoDB Atlas
 
-- curl https://<api-gateway-url>/users-with-orders
+- Create cluster\
+- Create user\
+- Allow IP: 0.0.0.0/0
+
+Connection string:
+
+    mongodb+srv://user:password@cluster.mongodb.net/ordersdb
+
+---
+
+## 🟢 Azure PostgreSQL
+
+- Create Flexible Server\
+- Enable public access\
+- Add firewall: 0.0.0.0 → 255.255.255.255
+
+Connection:
+
+    postgres://user:password@server.postgres.database.azure.com:5432/userdb?sslmode=require
+
+---
+
+## 🔐 Secrets
+
+In Azure Portal → Container App → Secrets:
+
+- mongo-uri\
+- postgres-url
+
+---
+
+## 🚀 Deploy Services
 
 ### User Service
 
-- curl https://<user-service-url>/users
+    az containerapp create \
+     --name user-service \
+     --resource-group microservices-rg \
+     --environment microservices-env \
+     --image microservicesacr.azurecr.io/user-service:v1 \
+     --target-port 3001 \
+     --ingress internal \
+     --secrets postgres-url=<url> \
+     --env-vars DATABASE_URL=secretref:postgres-url
 
 ### Order Service
 
-- curl https://<order-service-url>/orders
+    az containerapp create \
+     --name order-service \
+     --resource-group microservices-rg \
+     --environment microservices-env \
+     --image microservicesacr.azurecr.io/order-service:v1 \
+     --target-port 3002 \
+     --ingress internal \
+     --secrets mongo-uri=<uri> \
+     --env-vars MONGO_URI=secretref:mongo-uri
 
-## ⚠️ Common Issues
+### API Gateway
 
-- ❌ PostgreSQL Timeout
-- Enable public access
-- Add firewall rule:
-  0.0.0.0 - 255.255.255.255
-- ❌ MongoDB Atlas Connection Error
-  Add IP:
-  0.0.0.0/0
-- ❌ API Gateway Timeout
-  Ensure correct public URLs,
-  Increase Axios timeout
+    az containerapp create \
+     --name api-gateway \
+     --resource-group microservices-rg \
+     --environment microservices-env \
+     --image microservicesacr.azurecr.io/api-gateway:v1 \
+     --target-port 3000 \
+     --ingress external \
+     --env-vars USER_SERVICE_URL=user-service-endpoint ORDER_SERVICE_URL=you-order-service-endpoint
+
+---
+
+## 🧪 Troubleshooting
+
+### CORS Error
+
+Set:
+
+    FRONTEND_ORIGIN=https://your-frontend-url
+
+### Timeout 502
+
+    az containerapp logs show --name api-gateway --follow
+
+### No replicas
+
+    az containerapp update --min-replicas 1
+
+---
+
+## 💰 Cost Estimate
+
+- Container Apps: \$5--15/month\
+- PostgreSQL: \$15--25/month\
+- MongoDB Atlas: Free tier\
+- ACR: \~\$5/month
+
+👉 Total: \~\$20--40/month
+
+---
 
 ## 🚀 Future Improvements
 
-- Switch to internal communication (more secure)
-- Add API Gateway authentication
-- Implement CI/CD pipeline
-- Use Kubernetes (AKS)
-- Add monitoring and logging
+- Azure Key Vault\
+- JWT Authentication\
+- CI/CD pipeline\
+- Monitoring (App Insights)
 
-⭐ Notes
+---
 
-## This project demonstrates:
+## ⭐ What This Project Shows
 
-- Microservices architecture
-- Multi-database design (SQL + NoSQL)
-- Real-world cloud deployment challenges
-- Debugging networking issues in cloud environments
+- Real microservices architecture\
+- SQL + NoSQL integration\
+- Azure deployment skills\
+- Networking & debugging
 
-🤝 Contributing
+---
 
-Feel free to fork and improve this project!
+## 🤝 Contributing
 
-⭐ Support
+Feel free to fork and improve!
 
-If you like this project, give it a ⭐ on GitHub!
+---
+
+## ⭐ Support
+
+If this helped you, give it a ⭐
